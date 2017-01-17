@@ -20,13 +20,13 @@ class CommonIndexer
 
             islandora_session = islandora.login
             unless islandora_session
-              Log.error "Islandora uri detected but cannot login (check connection or credentials):\t#{uri}"
+              $stderr.puts "Islandora uri detected but cannot login (check connection or credentials):\t#{uri}"
               next
             end
 
             # this assumes configured user can view object (needs documentation)
             unless islandora.object_exists?(uri)
-              Log.error "Islandora uri detected but remote object not found:\t#{uri}"
+              $stderr.puts "Islandora uri detected but remote object not found:\t#{uri}"
               next
             end
 
@@ -34,9 +34,9 @@ class CommonIndexer
             response = islandora.update(uri, payload)
 
             if response # TODO: .code == 200
-              Log.info "Islandora uri metadata updated:\t#{uri}"
+              $stdout.puts "Islandora uri metadata updated:\t#{uri}"
             else
-              Log.error "Islandora uri detected but update failed:\t#{uri},#{payload}"
+              $stderr.puts "Islandora uri detected but update failed:\t#{uri},#{payload}"
             end
           end
         end
