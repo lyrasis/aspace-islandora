@@ -34,14 +34,14 @@ class ArchivesSpaceService < Sinatra::Base
     created_response(digital_object, params[:digital_object])
   end
 
-  Endpoint.delete('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:digital_object_id')
+  Endpoint.delete('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id')
     .description("Add a delete event to an Islandora Digital Object deposit")
-    .params(["digital_object_id", Integer, :digital_object_id],
+    .params(["id", Integer, :id],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
     .returns([200, :deleted]) \
   do
-    digital_object = DigitalObject.get_or_die(params[:digital_object_id])
+    digital_object = DigitalObject.get_or_die(params[:id])
     agent          = get_islandora_agent
 
     # TODO: remove ingest external doc? remove dobj file_uri? suppress?
