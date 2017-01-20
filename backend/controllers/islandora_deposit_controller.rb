@@ -58,6 +58,27 @@ class ArchivesSpaceService < Sinatra::Base
     created_response(event)
   end
 
+  Endpoint.get('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id/event')
+    .description("Get event associated with an Islandora Digital Object deposit")
+    .params(["id", Integer, :id],
+            ["event_type", String, :event_type],
+            ["repo_id", :repo_id])
+    .permissions([]) # .permissions([:view_digital_object_record])
+    .returns([200, "(:event)"]) \
+  do
+    json = resolve_references(
+      DigitalObject.to_jsonmodel(params[:id]),
+      ["linked_events", "linked_events::external_documents"]
+    )
+    event = json["linked_events"].find { |e| e["_resolved"]["event_type"] == params[:event_type] }
+
+    if event
+      json_response(event['_resolved'])
+    else
+      raise NotFoundException.new("Event wasn't found")
+    end
+  end
+
   def add_software_event(type, outcome, repo_id, digital_id, agent_id, identifier = nil, uri = nil)
     digital_object_uri = JSONModel(:digital_object).uri_for(
       digital_id,
