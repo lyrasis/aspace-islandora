@@ -3,18 +3,25 @@ require 'securerandom'
 require 'uri'
 
 class Islandora
-  attr_accessor :config
+  attr_reader :auth_method, :config, :token
 
   def initialize(config = {})
     # fake defaults (that should be overriden by config)
     @config = {
       base_url:  "https://sandbox.islandora.ca",
-      rest_path: "/islandora/archivesspace/v1/update",
+      rest_path: "/islandora/aspace/object",
       username:  "anonymous",
       password:  "nonsense",
+      api_key:   nil,
     }.merge(config)
 
-    @session = nil
+    unless (@config[:username] and @config[:password]) or @config[:api_key]
+      raise "Islandora configuration error: username AND password OR api_key required."
+    end
+
+    @auth_header = @config[:api_key] ? StringPreserveCase.new('X-Islandora-ASpace-ApiKey') : 'Cookie'
+    @auth_method = @config[:api_key] ? :api_key : :login
+    @token       = @auth_method == :api_key ? @config[:api_key] : nil
   end
 
   # check associated event is an ingest event and has matching location to uri
@@ -25,8 +32,14 @@ class Islandora
     event and ingested and location == uri
   end
 
-  # get session / token from islandora
+  # get pid from url
+  def extract_pid(uri)
+    URI(uri).path.split('/').last
+  end
+
+  # get session / token from islandora via login form
   def login
+    return @token if @token or @auth_method == :api_key
     request = Request.new("Post", "#{@config[:base_url]}/user/login")
 
     request.add_multipart_body ({
@@ -37,8 +50,8 @@ class Islandora
     })
 
     response = request.perform
-    @session = response['Set-Cookie'].split(";")[0] if response and response['Set-Cookie']
-    @session
+    @token   = response['Set-Cookie'].split(";")[0] if response and response['Set-Cookie']
+    @token
   end
 
   # check object exists in islandora repository
@@ -54,8 +67,15 @@ class Islandora
   # send object metadata to islandora
   # uri = http://sandbox.islandora.ca/islandora/object/islandora:root
   def update(uri, payload)
-    url      = "#{@config[:base_url]}/#{@config[:rest_path]}/islandora:root" # TODO parse pid from uri or remove this?
-    request  = Request.new("Put", url, @session, payload.to_s, { "Content-Type" => "application/json" })
+    url      = "#{@config[:base_url]}#{@config[:rest_path]}/#{extract_pid(uri)}"
+    request  = Request.new(
+      "Put", url, payload.to_s, {
+        "Accept" => "application/json",
+        "Content-Type" => "application/json",
+        "Content-Length" => "nnnn",
+        @auth_header => @token
+      }
+    )
     response = request.perform
     response
   end
@@ -63,7 +83,6 @@ class Islandora
   # check uri matches islandora base url
   # islandora.uri_eligible? "http://sandbox.islandora.ca/islandora/object/islandora:root"
   def uri_eligible?(uri)
-    # TODO: additional checks and balances
     uri =~ /#{Regexp.escape(@config[:base_url])}/
   end
 
@@ -72,10 +91,9 @@ class Islandora
 
     BOUNDARY = SecureRandom.hex
 
-    def initialize(request_method, url, session = nil, body = nil, headers = {})
+    def initialize(request_method, url, body = nil, headers = {})
       @request_method = request_method
       @uri            = URI(url) rescue nil
-      @session        = session
       @body           = body
       @headers        = headers
     end
@@ -107,7 +125,7 @@ class Islandora
         http.use_ssl      = @uri.scheme == "https" ? true : false
         request           = request_class(@request_method).new(@uri.request_uri)
         request.body      = @body if @body
-        request['Cookie'] = @session if @session
+
         @headers.each { |header, value| request[header] = value }
         response = http.request(request)
       rescue
@@ -119,6 +137,20 @@ class Islandora
     def request_class(request_method = 'Get')
       request_method = request_method.downcase.capitalize
       "Net::HTTP::#{request_method}".split('::').inject(Object) { |o, c| o.const_get c }
+    end
+
+  end
+
+  # NET::HTTP calls downcase on header keys, this is supposed to be ok
+  # but hasn't always been so can use this to preserve api_key case
+  class StringPreserveCase < String
+
+    def capitalize
+      self
+    end
+
+    def downcase
+      self
     end
 
   end
