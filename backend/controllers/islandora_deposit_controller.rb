@@ -3,12 +3,13 @@ class ArchivesSpaceService < Sinatra::Base
   Endpoint.post('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits')
     .description("Create a Digital Object with an Islandora deposit ingest event")
     .params(["digital_object", JSONModel(:digital_object), "The record to create", :body => true],
+            ["pid", :pid],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
     .returns([200, :created],
              [400, :error]) \
   do
-    digital_object_identifier = params[:digital_object]['digital_object_id']
+    pid                       = params[:pid]
     file_uri                  = params[:digital_object]['file_versions'][0]['file_uri'] rescue nil
     file_uri_object           = get_file_uri_object(file_uri) # check for pre-existing file_uri
 
@@ -27,7 +28,7 @@ class ArchivesSpaceService < Sinatra::Base
       RequestContext.get(:repo_id),
       digital_object[:id],
       agent[:id],
-      digital_object_identifier,
+      pid,
       file_uri
     )
 
