@@ -3,7 +3,7 @@ class ArchivesSpaceService < Sinatra::Base
   Endpoint.post('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits')
     .description("Create a Digital Object with an Islandora deposit ingest event")
     .params(["digital_object", JSONModel(:digital_object), "The record to create", :body => true],
-            ["pid", :pid],
+            ["pid", String, :pid],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
     .returns([200, :created],
