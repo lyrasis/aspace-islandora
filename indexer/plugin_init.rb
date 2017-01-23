@@ -9,4 +9,5 @@ AppConfig[:islandora_config] = {
   rest_path: ENV.fetch("ISLANDORA_REST_PATH", nil),
   username:  ENV.fetch("ISLANDORA_USERNAME", nil),
   password:  ENV.fetch("ISLANDORA_PASSWORD", nil),
+  api_key:   ENV.fetch("ISLANDORA_API_KEY", nil),
 }
