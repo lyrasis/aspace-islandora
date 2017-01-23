@@ -9,9 +9,10 @@ class ArchivesSpaceService < Sinatra::Base
     .returns([200, :created],
              [400, :error]) \
   do
-    pid                       = params[:pid]
-    file_uri                  = params[:digital_object]['file_versions'][0]['file_uri'] rescue nil
-    file_uri_object           = get_file_uri_object(file_uri) # check for pre-existing file_uri
+    pid             = params[:pid]
+    file_uri        = params[:digital_object]['file_versions'][0]['file_uri'] rescue nil
+    file_uri_object = get_file_uri_object(file_uri) # check for pre-existing file_uri
+    agent           = get_islandora_agent
 
     raise BadParamsException.new(
       :digital_object => ["File version uri required for Islandora deposit and must be unique."]
@@ -19,7 +20,6 @@ class ArchivesSpaceService < Sinatra::Base
 
     # create digital object before event to check validation
     digital_object = DigitalObject.create_from_json(params[:digital_object])
-    agent          = get_islandora_agent
 
     # TODO: validate enums in init: event_type, outcome, lr::role, la::role
     add_software_event(
