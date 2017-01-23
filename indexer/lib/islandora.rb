@@ -13,6 +13,7 @@ class Islandora
       username:  "anonymous",
       password:  "nonsense",
       api_key:   nil,
+      verbose:   true,
     }.merge(config)
 
     unless (@config[:username] and @config[:password]) or @config[:api_key]
@@ -22,6 +23,14 @@ class Islandora
     @auth_header = @config[:api_key] ? StringPreserveCase.new('X-Islandora-ASpace-ApiKey') : 'Cookie'
     @auth_method = @config[:api_key] ? :api_key : :login
     @token       = @auth_method == :api_key ? @config[:api_key] : nil
+  end
+
+  def debug(message)
+    $stdout.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @config[:verbose]
+  end
+
+  def error(message)
+    $stderr.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @config[:verbose]
   end
 
   # check associated event is an ingest event and has matching location to uri
