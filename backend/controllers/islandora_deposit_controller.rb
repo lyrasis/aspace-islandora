@@ -13,21 +13,33 @@ class ArchivesSpaceService < Sinatra::Base
     file_uri        = params[:digital_object]['file_versions'][0]['file_uri'] rescue nil
     file_uri_object = get_file_uri_object(file_uri) # check for pre-existing file_uri
     agent           = get_islandora_agent
+    agent_uri       = JSONModel(:agent_software).uri_for(agent[:id])
 
     raise BadParamsException.new(
       :digital_object => ["File version uri required for Islandora deposit and must be unique."]
     ) if ! file_uri or file_uri_object
 
+    # add islandora software agent to digital object payload
+    params[:digital_object]['linked_agents'][0] = {
+      "role"  => "source",
+      "terms" => [],
+      "ref"   => agent_uri,
+    }
+
+    $stdout.puts "\n\n#{agent.inspect}\n\n"
+    $stdout.puts "\n\n#{agent_uri}\n\n"
+    $stdout.puts "\n\n#{params[:digital_object]}\n\n"
+
     # create digital object before event to check validation
-    digital_object = DigitalObject.create_from_json(params[:digital_object])
+    digital_object     = DigitalObject.create_from_json(params[:digital_object])
+    digital_object_uri = JSONModel(:digital_object).uri_for(digital_object[:id], :repo_id => RequestContext.get(:repo_id))
 
     # TODO: validate enums in init: event_type, outcome, lr::role, la::role
     add_software_event(
       "ingestion",
       "pass",
-      RequestContext.get(:repo_id),
-      digital_object[:id],
-      agent[:id],
+      digital_object_uri,
+      agent_uri,
       pid,
       file_uri
     )
@@ -42,8 +54,10 @@ class ArchivesSpaceService < Sinatra::Base
     .permissions([:update_digital_object_record])
     .returns([200, :deleted]) \
   do
-    digital_object = DigitalObject.get_or_die(params[:id])
-    agent          = get_islandora_agent
+    digital_object     = DigitalObject.get_or_die(params[:id])
+    digital_object_uri = JSONModel(:digital_object).uri_for(digital_object[:id], :repo_id => RequestContext.get(:repo_id))
+    agent              = get_islandora_agent
+    agent_uri          = JSONModel(:agent_software).uri_for(agent[:id])
 
     # TODO: remove ingest external doc? remove dobj file_uri? suppress?
 
@@ -51,9 +65,8 @@ class ArchivesSpaceService < Sinatra::Base
     event = add_software_event(
       "deletion",
       "pass",
-      RequestContext.get(:repo_id),
-      digital_object[:id],
-      agent[:id]
+      digital_object_uri,
+      agent_uri
     )
 
     created_response(event)
@@ -80,12 +93,7 @@ class ArchivesSpaceService < Sinatra::Base
     end
   end
 
-  def add_software_event(type, outcome, repo_id, digital_id, agent_id, identifier = nil, uri = nil)
-    digital_object_uri = JSONModel(:digital_object).uri_for(
-      digital_id,
-      :repo_id => repo_id
-    )
-
+  def add_software_event(type, outcome, digital_object_uri, agent_uri, identifier = nil, uri = nil)
     event = {
       "event_type"   => type,
       "outcome"      => outcome,
@@ -101,7 +109,7 @@ class ArchivesSpaceService < Sinatra::Base
       }],
       "linked_agents" => [{
         "role" => "executing_program",
-        "ref"  => JSONModel(:agent_software).uri_for(agent_id)
+        "ref"  => agent_uri
       }]
     }
 
