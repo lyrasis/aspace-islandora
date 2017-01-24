@@ -39,7 +39,7 @@ class ArchivesSpaceService < Sinatra::Base
       file_uri
     )
 
-    created_response(digital_object, params[:digital_object])
+    json_response(DigitalObject.to_jsonmodel(digital_object))
   end
 
   Endpoint.delete('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id')
@@ -67,7 +67,7 @@ class ArchivesSpaceService < Sinatra::Base
     digital_object_json['file_versions'] = digital_object_json['file_versions'].clear
     digital_object.update_from_json(digital_object_json)
 
-    created_response(event)
+    json_response(Event.to_jsonmodel(event))
   end
 
   Endpoint.get('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id/event')
