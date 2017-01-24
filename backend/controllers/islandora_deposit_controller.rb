@@ -26,10 +26,6 @@ class ArchivesSpaceService < Sinatra::Base
       "ref"   => agent_uri,
     }
 
-    $stdout.puts "\n\n#{agent.inspect}\n\n"
-    $stdout.puts "\n\n#{agent_uri}\n\n"
-    $stdout.puts "\n\n#{params[:digital_object]}\n\n"
-
     # create digital object before event to check validation
     digital_object     = DigitalObject.create_from_json(params[:digital_object])
     digital_object_uri = JSONModel(:digital_object).uri_for(digital_object[:id], :repo_id => RequestContext.get(:repo_id))
