@@ -25,13 +25,6 @@ class CommonIndexer
             end
             islandora.debug "Islandora event eligible: #{event}, #{uri}"
 
-            # this assumes configured user can view object (needs documentation)
-            unless islandora.object_exists?(uri)
-              islandora.error "Islandora uri detected but remote object not found: #{uri}"
-              next
-            end
-            islandora.debug "Islandora object exists: #{uri}"
-
             payload  = JSON.generate(obj)
             response = islandora.update(uri, payload)
 
