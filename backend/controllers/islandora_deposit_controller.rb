@@ -30,7 +30,6 @@ class ArchivesSpaceService < Sinatra::Base
     digital_object     = DigitalObject.create_from_json(params[:digital_object])
     digital_object_uri = JSONModel(:digital_object).uri_for(digital_object[:id], :repo_id => RequestContext.get(:repo_id))
 
-    # TODO: validate enums in init: event_type, outcome, lr::role, la::role
     add_software_event(
       "ingestion",
       "pass",
@@ -44,26 +43,29 @@ class ArchivesSpaceService < Sinatra::Base
   end
 
   Endpoint.delete('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id')
-    .description("Add a delete event to an Islandora Digital Object deposit")
+    .description("Add a delete event to an Islandora Digital Object deposit and remove file_uri")
     .params(["id", Integer, :id],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
     .returns([200, :deleted]) \
   do
-    digital_object     = DigitalObject.get_or_die(params[:id])
-    digital_object_uri = JSONModel(:digital_object).uri_for(digital_object[:id], :repo_id => RequestContext.get(:repo_id))
-    agent              = get_islandora_agent
-    agent_uri          = JSONModel(:agent_software).uri_for(agent[:id])
+    digital_object      = DigitalObject.get_or_die(params[:id])
+    digital_object_json = DigitalObject.to_jsonmodel(digital_object)
+    digital_object_uri  = digital_object_json['uri']
+    agent               = get_islandora_agent
+    agent_uri           = JSONModel(:agent_software).uri_for(agent[:id])
 
-    # TODO: remove ingest external doc? remove dobj file_uri? suppress?
-
-    # TODO: validate enums in init: event_type, outcome, lr::role, la::role
+    # TODO: check we don't already have an associated delete event
     event = add_software_event(
       "deletion",
       "pass",
       digital_object_uri,
       agent_uri
     )
+
+    # TODO: other actions? remove agent? suppress? unpublish?
+    digital_object_json['file_versions'] = digital_object_json['file_versions'].clear
+    digital_object.update_from_json(digital_object_json)
 
     created_response(event)
   end
@@ -73,7 +75,7 @@ class ArchivesSpaceService < Sinatra::Base
     .params(["id", Integer, :id],
             ["event_type", String, :event_type],
             ["repo_id", :repo_id])
-    .permissions([]) # .permissions([:view_digital_object_record])
+    .permissions([:view_digital_object_record])
     .returns([200, "(:event)"]) \
   do
     json = resolve_references(
