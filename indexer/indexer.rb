@@ -36,7 +36,7 @@ class CommonIndexer
             end
             islandora.debug "Islandora object exists: #{uri}"
 
-            payload  = JSON.generate record['record']
+            payload  = JSON.parse(doc['json'])
             response = islandora.update(uri, payload)
 
             if response and response.code.to_s == "200"
