@@ -30,7 +30,7 @@ class Islandora
   end
 
   def error(message)
-    $stderr.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @config[:verbose]
+    $stderr.puts "\n\n\n\n\n#{message}\n\n\n\n\n"
   end
 
   # check associated event is an ingest event and has matching location to uri
