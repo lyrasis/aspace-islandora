@@ -37,9 +37,31 @@ class CommonIndexer
         end
 
       end
+
+      if doc['primary_type'] == 'event'
+        record = record['record']
+        if record['event_type'] == "ingestion" and record['linked_records'].empty?
+
+          # check this is really an islandora event
+          islandora_agent = record['linked_agents'].find { |la|
+            la['role'] == "executing_program" and
+            la['_resolved']['display_name']['software_name'] == "Islandora"
+          }
+          next unless islandora_agent
+
+          # digital object link lost, notify islandora
+          url       = record['external_documents'][0]['location']
+          islandora = Islandora.new(AppConfig[:islandora_config])
+          response  = islandora.delete url
+
+          if response and response.code.to_s == "200"
+            islandora.debug "Islandora delete notification succeeded: #{url}"
+          else
+            islandora.error "Islandora delete notification failed: #{url}, #{response.inspect}"
+          end
+        end
+      end
     }
   end
-
-  # TODO: delete_hook
 
 end
