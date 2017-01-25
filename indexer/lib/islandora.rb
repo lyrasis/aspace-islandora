@@ -29,6 +29,18 @@ class Islandora
     $stdout.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @config[:verbose]
   end
 
+  def delete(uri)
+    url      = "#{@config[:base_url]}#{@config[:rest_path]}/#{extract_pid(uri)}"
+    request  = Request.new(
+      "Delete", url, nil, {
+        "Accept" => "application/json",
+        @auth_header => @token
+      }
+    )
+    response = request.perform
+    response
+  end
+
   def error(message)
     $stderr.puts "\n\n\n\n\n#{message}\n\n\n\n\n"
   end
