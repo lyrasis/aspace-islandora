@@ -48,9 +48,14 @@ class Islandora
   # check associated event is an ingest event and has matching location to uri
   # islandora.event_eligible? event, "http://sandbox.islandora.ca/islandora/object/islandora:root"
   def event_eligible?(event, uri)
-    ingested = event['event_type'] == 'ingestion' rescue nil
-    location = event['external_documents'][0]['location'] rescue nil
-    event and ingested and location == uri
+    eligible = false
+    if event
+      event    = event['_resolved'] if event.has_key? '_resolved'
+      ingested = event['event_type'] == 'ingestion'
+      location = event['external_documents'][0]['location'] rescue nil
+      eligible = !!(event and ingested and location == uri)
+    end
+    eligible
   end
 
   # get pid from url

@@ -19,7 +19,7 @@ class CommonIndexer
             event = obj['linked_events'].find { |evt| evt['_resolved']['event_type'] == 'ingestion' }
             islandora.debug "ArchivesSpace digital object: #{obj}"
 
-            unless islandora.event_eligible? event['_resolved'], uri
+            unless islandora.event_eligible? event, uri
               islandora.error "Islandora uri detected but eligible event not found: #{uri}"
               next
             end
