@@ -23,10 +23,11 @@ class Islandora
     @auth_header = @config[:api_key] ? StringPreserveCase.new('X-Islandora-ASpace-ApiKey') : 'Cookie'
     @auth_method = @config[:api_key] ? :api_key : :login
     @token       = @auth_method == :api_key ? @config[:api_key] : nil
+    @verbose     = @config[:verbose]
   end
 
   def debug(message)
-    $stdout.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @config[:verbose]
+    $stdout.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @verbose
   end
 
   def delete(uri)
@@ -55,6 +56,7 @@ class Islandora
       location = event['external_documents'][0]['location'] rescue nil
       eligible = !!(event and ingested and location == uri)
     end
+    debug "Islandora event eligible: #{event}, #{uri}" if eligible
     eligible
   end
 
@@ -109,7 +111,9 @@ class Islandora
   # check uri matches islandora base url
   # islandora.uri_eligible? "http://sandbox.islandora.ca/islandora/object/islandora:root"
   def uri_eligible?(uri)
-    uri =~ /#{Regexp.escape(@config[:base_url])}/
+    eligible = uri =~ /#{Regexp.escape(@config[:base_url])}/
+    debug "Islandora uri eligible: #{uri}" if eligible
+    eligible
   end
 
   class Request
