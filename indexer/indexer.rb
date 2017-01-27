@@ -13,17 +13,14 @@ class CommonIndexer
             islandora = Islandora.new(AppConfig[:islandora_config])
 
             next unless islandora.uri_eligible?(uri)
-            islandora.debug "Islandora uri eligible: #{uri}"
 
             obj   = JSON.parse doc['json']
             event = obj['linked_events'].find { |evt| evt['_resolved']['event_type'] == 'ingestion' }
-            islandora.debug "ArchivesSpace digital object: #{obj}"
 
             unless islandora.event_eligible? event, uri
               islandora.error "Islandora uri detected but eligible event not found: #{uri}"
               next
             end
-            islandora.debug "Islandora event eligible: #{event}, #{uri}"
 
             payload  = JSON.generate(obj)
             response = islandora.update(uri, payload)
@@ -43,6 +40,9 @@ class CommonIndexer
         if record['event_type'] == "ingestion" and record['linked_records'].empty?
 
           # check this is really an islandora event
+          url = record['external_documents'][0]['location']
+          next unless islandora.uri_eligible?(url)
+
           islandora_agent = record['linked_agents'].find { |la|
             la['role'] == "executing_program" and
             la['_resolved']['display_name']['software_name'] == "Islandora"
@@ -50,7 +50,6 @@ class CommonIndexer
           next unless islandora_agent
 
           # digital object link lost, notify islandora
-          url       = record['external_documents'][0]['location']
           islandora = Islandora.new(AppConfig[:islandora_config])
           response  = islandora.delete url
 
