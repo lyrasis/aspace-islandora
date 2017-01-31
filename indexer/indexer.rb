@@ -40,7 +40,8 @@ class CommonIndexer
         if record['event_type'] == "ingestion" and record['linked_records'].empty?
 
           # check this is really an islandora event
-          url = record['external_documents'][0]['location']
+          islandora = Islandora.new(AppConfig[:islandora_config])
+          url       = record['external_documents'][0]['location']
           next unless islandora.uri_eligible?(url)
 
           islandora_agent = record['linked_agents'].find { |la|
@@ -50,8 +51,7 @@ class CommonIndexer
           next unless islandora_agent
 
           # digital object link lost, notify islandora
-          islandora = Islandora.new(AppConfig[:islandora_config])
-          response  = islandora.delete url
+          response = islandora.delete url
 
           if response and response.code.to_s == "200"
             islandora.debug "Islandora delete notification succeeded: #{url}"
