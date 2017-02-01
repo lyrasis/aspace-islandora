@@ -45,7 +45,7 @@ class CommonIndexer
           next unless islandora.uri_eligible?(url)
 
           islandora_agent = record['linked_agents'].find { |la|
-            la['role'] == "executing_program" and
+            la['role'] == "source" and
             la['_resolved']['display_name']['software_name'] == "Islandora"
           }
           next unless islandora_agent
