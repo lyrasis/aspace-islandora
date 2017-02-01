@@ -18,10 +18,17 @@ class Event
         "label"     => "event",
         "begin"     => Time.now.strftime("%Y-%m-%d")
       },
-      "linked_records" => [{
-       "role" => "source",
-       "ref"  => digital_object_uri
-      }],
+      "linked_records" => [
+        # need the agent so that deletes to object don't create an invalid (on update) event
+        {
+          "role" => "source",
+          "ref"  => agent_uri
+        },
+        {
+          "role" => "source",
+          "ref"  => digital_object_uri
+        }
+      ],
       "linked_agents" => [{
         "role" => "executing_program",
         "ref"  => agent_uri

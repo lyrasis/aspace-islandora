@@ -34,23 +34,26 @@ class CommonIndexer
         end
 
       end
+    }
+  end
 
+  # add hook for event updates to islandora if eligible
+  add_indexer_initialize_hook do |indexer|
+    # record: aspace record, doc: document shipped to solr
+    indexer.add_document_prepare_hook { |doc, record|
       if doc['primary_type'] == 'event'
         record = record['record']
-        if record['event_type'] == "ingestion" and record['linked_records'].empty?
+        if record['event_type'] == "ingestion" and !record['linked_records'].find { |lr| lr['ref'] =~ /digital_objects/ }
 
           # check this is really an islandora event
           islandora = Islandora.new(AppConfig[:islandora_config])
           url       = record['external_documents'][0]['location']
+
+          islandora.debug "Checking if event update is Islandora eligible: #{record}"
           next unless islandora.uri_eligible?(url)
+          next unless islandora.agent_eligible?(record['linked_agents'])
 
-          islandora_agent = record['linked_agents'].find { |la|
-            la['role'] == "source" and
-            la['_resolved']['display_name']['software_name'] == "Islandora"
-          }
-          next unless islandora_agent
-
-          # digital object link lost, notify islandora
+          # digital object link has been lost, notify islandora
           response = islandora.delete url
 
           if response and response.code.to_s == "200"

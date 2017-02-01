@@ -26,6 +26,13 @@ class Islandora
     @verbose     = @config[:verbose]
   end
 
+  # check for islandora agent
+  def agent_eligible?(agents)
+    agent = agents.find { |a| a['role'] == "executing_program" and a['_resolved']['display_name']['software_name'] == "Islandora" }
+    debug "Islandora agent eligible: #{agent}" if agent
+    !agent.nil?
+  end
+
   def debug(message)
     $stdout.puts "\n\n\n\n\n#{message}\n\n\n\n\n" if @verbose
   end
