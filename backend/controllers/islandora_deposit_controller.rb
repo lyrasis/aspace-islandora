@@ -6,7 +6,7 @@ class ArchivesSpaceService < Sinatra::Base
             ["pid", String, :pid],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
-    .returns([200, :created],
+    .returns([200, "(:digital_object)"],
              [400, :error]) \
   do
     pid             = params[:pid]
@@ -27,31 +27,29 @@ class ArchivesSpaceService < Sinatra::Base
 
     # create digital object before event to check validation
     digital_object     = DigitalObject.create_from_json(params[:digital_object])
-    digital_object_uri = DigitalObject.to_jsonmodel(digital_object)['uri']
+    digital_object_uri = JSONModel(:digital_object).uri_for(digital_object.id, :repo_id => RequestContext.get(:repo_id))
 
     Event.for_islandora_deposit_ingestion(digital_object_uri, agent_uri, pid, file_uri)
-    digital_object.refresh
-
-    json_response(DigitalObject.to_jsonmodel(digital_object))
+    json_response(DigitalObject.to_jsonmodel(digital_object.refresh))
   end
 
   Endpoint.delete('/plugins/aspace_islandora/repositories/:repo_id/islandora_deposits/:id')
-    .description("Add a delete event to an Islandora Digital Object deposit and remove file_uri")
+    .description("Add a delete event to an Islandora Digital Object deposit and remove references")
     .params(["id", Integer, :id],
             ["repo_id", :repo_id])
     .permissions([:update_digital_object_record])
-    .returns([200, :deleted]) \
+    .returns([200, "(:event)"]) \
   do
-    digital_object      = DigitalObject.get_or_die(params[:id])
-    digital_object_json = DigitalObject.to_jsonmodel(digital_object)
-    agent_uri           = AgentSoftware.ensure_correctly_versioned_islandora_record.uri
+    digital_object = DigitalObject.get_or_die(params[:id])
+    obj            = DigitalObject.to_jsonmodel(digital_object)
+    agent_uri      = AgentSoftware.ensure_correctly_versioned_islandora_record.uri
 
     # TODO: other actions? remove agent? suppress? unpublish?
-    digital_object_json['file_versions'] = digital_object_json['file_versions'].clear
-    digital_object.update_from_json(digital_object_json)
+    obj['file_versions'] = obj['file_versions'].clear
+    digital_object.update_from_json(JSONModel(:digital_object).from_hash(obj.to_hash))
 
     # TODO: check we don't already have an associated delete event
-    event = Event.for_islandora_deposit_deletion(digital_object_json['uri'], agent_uri)
+    event = Event.for_islandora_deposit_deletion(obj['uri'], agent_uri)
 
     json_response(Event.to_jsonmodel(event))
   end
