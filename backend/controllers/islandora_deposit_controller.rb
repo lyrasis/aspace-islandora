@@ -11,7 +11,7 @@ class ArchivesSpaceService < Sinatra::Base
   do
     pid             = params[:pid]
     file_uri        = params[:digital_object]['file_versions'][0]['file_uri'] rescue nil
-    file_uri_record = FileVersion.find_by_file_uri(file_uri) # check for pre-existing file_uri
+    file_uri_record = DigitalObject.find_by_file_uri(file_uri) # check for pre-existing file_uri
     agent_uri       = AgentSoftware.ensure_correctly_versioned_islandora_record.uri
 
     raise BadParamsException.new(
@@ -29,7 +29,7 @@ class ArchivesSpaceService < Sinatra::Base
     digital_object     = DigitalObject.create_from_json(params[:digital_object])
     digital_object_uri = JSONModel(:digital_object).uri_for(digital_object.id, :repo_id => RequestContext.get(:repo_id))
 
-    Event.for_islandora_deposit_ingestion(digital_object_uri, agent_uri, pid, file_uri)
+    DigitalObject.create_islandora_ingest_event(digital_object_uri, agent_uri, pid, file_uri)
     json_response(DigitalObject.to_jsonmodel(digital_object.refresh))
   end
 
@@ -48,8 +48,10 @@ class ArchivesSpaceService < Sinatra::Base
     obj['file_versions'] = obj['file_versions'].clear
     digital_object.update_from_json(JSONModel(:digital_object).from_hash(obj.to_hash))
 
-    # TODO: check we don't already have an associated delete event
-    event = Event.for_islandora_deposit_deletion(obj['uri'], agent_uri)
+    event = DigitalObject.find_event_for(params[:id], 'deletion')
+    unless event
+      event = DigitalObject.create_islandora_delete_event(obj['uri'], agent_uri)
+    end
 
     json_response(Event.to_jsonmodel(event))
   end
@@ -62,14 +64,9 @@ class ArchivesSpaceService < Sinatra::Base
     .permissions([:view_digital_object_record])
     .returns([200, "(:event)"]) \
   do
-    json = resolve_references(
-      DigitalObject.to_jsonmodel(params[:id]),
-      ["linked_events", "linked_events::external_documents"]
-    )
-    event = json["linked_events"].find { |e| e["_resolved"]["event_type"] == params[:event_type] }
-
+    event = DigitalObject.find_event_for(params[:id], params[:event_type])
     if event
-      json_response(event['_resolved'])
+      json_response(Event.to_jsonmodel(event))
     else
       raise NotFoundException.new("Event wasn't found")
     end
