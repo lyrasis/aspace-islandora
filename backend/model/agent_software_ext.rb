@@ -1,0 +1,1 @@
+AgentSoftware.include(Islandora::Software)
