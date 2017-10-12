@@ -9,7 +9,7 @@ module Islandora
       obj = super
 
       begin
-        handle_islandora_deposit(obj) do |client, obj_json, uri|
+        DigitalObject.handle_islandora_deposit(obj) do |client, obj_json, uri|
           payload  = JSON.generate(obj_json)
           response = client.update(uri, payload)
 
@@ -30,7 +30,7 @@ module Islandora
       obj  = self
 
       begin
-        handle_islandora_deposit(obj) do |client, obj_json, uri|
+        DigitalObject.handle_islandora_deposit(obj) do |client, obj_json, uri|
           response = client.delete uri
 
           if response and response.code.to_s == "200"
@@ -46,23 +46,6 @@ module Islandora
       super
     end
 
-    def handle_islandora_deposit(obj, &block)
-      json = URIResolver.resolve_references(
-        DigitalObject.to_jsonmodel(obj),
-        ['linked_agents', 'linked_events', 'subjects']
-      )
-      json["file_versions"].each do |fv|
-        uri    = fv.fetch("file_uri")
-        client = Islandora::Client.new(AppConfig[:islandora_config])
-
-        next unless client.uri_eligible?(uri)
-        next unless client.agent_eligible?(json['linked_agents'])
-        next unless client.event_eligible?(json['linked_events'], uri)
-
-        yield client, json, uri
-      end
-    end
-
     module ClassMethods
 
       # nothing on create for now ...
@@ -71,6 +54,23 @@ module Islandora
       #   # TODO
       #   obj
       # end
+
+      def handle_islandora_deposit(obj, &block)
+        json = URIResolver.resolve_references(
+          DigitalObject.to_jsonmodel(obj),
+          ['linked_agents', 'linked_events', 'linked_instances', 'subjects']
+        )
+        json["file_versions"].each do |fv|
+          uri    = fv.fetch("file_uri")
+          client = Islandora::Client.new(AppConfig[:islandora_config])
+
+          next unless client.uri_eligible?(uri)
+          next unless client.agent_eligible?(json['linked_agents'])
+          next unless client.event_eligible?(json['linked_events'], uri)
+
+          yield client, json, uri
+        end
+      end
 
       def find_event_for(id, event_type)
       json = URIResolver.resolve_references(DigitalObject.to_jsonmodel(
