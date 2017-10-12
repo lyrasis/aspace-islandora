@@ -58,7 +58,18 @@ module Islandora
       def handle_islandora_deposit(obj, &block)
         json = URIResolver.resolve_references(
           DigitalObject.to_jsonmodel(obj),
-          ['linked_agents', 'linked_events', 'linked_instances', 'subjects']
+          [
+            'extents',
+            'linked_agents',
+            'linked_events',
+            'linked_instances',
+            'linked_instances::extents',
+            'linked_instances::linked_agents',
+            'linked_instances::notes',
+            'linked_instances::subjects',
+            'notes',
+            'subjects',
+          ]
         )
         json["file_versions"].each do |fv|
           uri    = fv.fetch("file_uri")
