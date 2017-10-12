@@ -536,6 +536,12 @@ Example payload to Islandora:
 }
 ```
 
+## Running the tests
+
+```bash
+./build/run backend:test -Dexample='Islandora'
+```
+
 ## License
 
 This plugin is available as open source under the terms of the

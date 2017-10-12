@@ -22,7 +22,7 @@ describe 'Islandora' do
 
     it "can determine agent is eligible" do
       agents = [{
-        "role" => "executing_program",
+        "role" => "source",
         "_resolved" => {
           "display_name" => {
             "software_name" => "Islandora"
@@ -34,7 +34,7 @@ describe 'Islandora' do
 
     it "can determine agent is ineligible" do
       agents = [{
-        "role" => "executing_program",
+        "role" => "source",
         "_resolved" => {
           "display_name" => {
             "software_name" => "ArchivesSpace"
