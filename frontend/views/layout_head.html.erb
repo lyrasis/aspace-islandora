@@ -1,0 +1,17 @@
+<% if ['digital_objects', 'events'].include?(controller_name) && action_name == 'edit' %>
+  <script>
+    // make islandora created and external refs readonly
+    function look_for_islandora() {
+      if (!$('li[data-object-name="linked_agent"]:contains("Islandora 7.x")').size()) {
+        window.requestAnimationFrame(look_for_islandora);
+      } else {
+        $('input[name="digital_object[digital_object_id]"]').attr('readonly', true);
+        $('textarea[name="digital_object[file_versions][0][file_uri]"]').attr('readonly', true);
+        $('textarea[name="event[outcome_note]"]').attr('readonly', true);
+        $('textarea[name="event[external_documents][0][title]"]').attr('readonly', true);
+        $('textarea[name="event[external_documents][0][location]"]').attr('readonly', true);
+      }
+    };
+    look_for_islandora();
+  </script>
+<% end %>
