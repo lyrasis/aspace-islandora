@@ -20,6 +20,12 @@ AppConfig[:islandora_config] = {
 Appconfig[:plugins] << "aspace-islandora"
 ```
 
+Islandora requires a user in ArchivesSpace. We recommend:
+
+- Create a group in ArchivesSpace: group_code: islandora, desc: Islandora
+- Add: view records, create/update digital objects, create/update events perms to group
+- Create a user: islandora, add user to islandora group for each repo as necessary
+
 For Islandora requirements refer to [Islandora ArchivesSpace Solution Pack](https://github.com/lyrasis/islandora_archivesspace).
 
 ## ArchivesSpace versions tested:
