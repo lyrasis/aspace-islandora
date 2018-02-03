@@ -17,7 +17,7 @@ AppConfig[:islandora_config] = {
   api_key: "123456",
 }
 
-Appconfig[:plugins] << "aspace-islandora"
+AppConfig[:plugins] << "aspace-islandora"
 ```
 
 Islandora requires a user in ArchivesSpace. We recommend:
