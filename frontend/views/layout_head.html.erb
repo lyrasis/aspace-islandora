@@ -5,7 +5,6 @@
       if (!$('li[data-object-name="linked_agent"]:contains("Islandora 7.x")').size()) {
         window.requestAnimationFrame(look_for_islandora);
       } else {
-        $('input[name="digital_object[digital_object_id]"]').attr('readonly', true);
         $('textarea[name="digital_object[file_versions][0][file_uri]"]').attr('readonly', true);
         $('textarea[name="event[outcome_note]"]').attr('readonly', true);
         $('textarea[name="event[external_documents][0][title]"]').attr('readonly', true);
